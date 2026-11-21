@@ -1,0 +1,34 @@
+name: Build mod
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: for z in realistic_gaming_gear_upload*.zip; do unzip -o "$z"; done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate textures, models and data
+        run: |
+          pip install pillow
+          python upload_me/tools/gen_assets.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.1.1
+      - name: Build
+        working-directory: upload_me
+        run: gradle build --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: realisticgaminggear-jar
+          path: upload_me/build/libs/*.jar
